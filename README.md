@@ -1,5 +1,7 @@
 # Mustache Template Engine for Go
 
+![Go Test](https://github.com/cfichtmueller/mustache/actions/workflows/testing.yml/badge.svg)
+
 ----
 
 ## Why a Fork?
