@@ -1,46 +1,12 @@
 # Mustache Template Engine for Go
 
-[![Build Status](https://img.shields.io/travis/cbroglie/mustache.svg)](https://travis-ci.org/cbroglie/mustache)
-[![Go Doc](https://godoc.org/github.com/cbroglie/mustache?status.svg)](https://godoc.org/github.com/cbroglie/mustache)
-[![Go Report Card](https://goreportcard.com/badge/github.com/cbroglie/mustache)](https://goreportcard.com/report/github.com/cbroglie/mustache)
-[![codecov](https://codecov.io/gh/cbroglie/mustache/branch/master/graph/badge.svg)](https://codecov.io/gh/cbroglie/mustache)
-[![Downloads](https://img.shields.io/github/downloads/cbroglie/mustache/latest/total.svg)](https://github.com/cbroglie/mustache/releases)
-[![Latest release](https://img.shields.io/github/release/cbroglie/mustache.svg)](https://github.com/cbroglie/mustache/releases)
-
-
-<img src="./images/logo.jpeg" alt="logo" width="100"/>
-
 ----
 
 ## Why a Fork?
 
-I forked [hoisie/mustache](https://github.com/hoisie/mustache) because it does not appear to be maintained, and I wanted to add the following functionality:
+I forked [cbroglie/mustache](https://github.com/cbroglie/mustache) because I wanted to change some things:
 
-- Update the API to follow the idiomatic Go convention of returning errors (this is a breaking change)
-- Add option to treat missing variables as errors
-
-----
-
-## CLI Overview
-
-```bash
-➜  ~ go install github.com/cbroglie/mustache/cmd/mustache@latest
-➜  ~ mustache
-Usage:
-  mustache [data] template [flags]
-
-Examples:
-  $ mustache data.yml template.mustache
-  $ cat data.yml | mustache template.mustache
-  $ mustache --layout wrapper.mustache data template.mustache
-  $ mustache --overide over.yml data.yml template.mustache
-
-Flags:
-  -h, --help   help for mustache
-  --layout     a file to use as the layout template
-  --override   a data.yml file whose definitions supercede data.yml
-➜  ~
-```
+- introduce the concept of engines which isolate template and execution contexts
 
 ----
 
@@ -64,7 +30,7 @@ Also check out some [example mustache files](http://github.com/mustache/mustache
 
 ## Installation
 
-To install the CLI, run `go install github.com/cbroglie/mustache/cmd/mustache@latest`. To use it in a program, run `go get github.com/cbroglie/mustache` and use `import "github.com/cbroglie/mustache"`.
+To use it in a program, run `go get github.com/cfichtmueller/mustache` and use `import "github.com/cfichtmueller/mustache"`.
 
 ----
 

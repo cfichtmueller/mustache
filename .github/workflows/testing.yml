@@ -21,8 +21,3 @@ jobs:
 
       - name: Test
         run: make test
-
-      - name: Upload results to codecov
-        uses: codecov/codecov-action@v3
-        with:
-          verbose: true
