@@ -46,6 +46,15 @@ func TestRenderPartials(t *testing.T) {
 	mustRender(t, e, "hello", Name{Name: "Bob"}, "Hello <strong>Bob</strong>")
 }
 
+func TestAddPartialsAfterTemplates(t *testing.T) {
+	e := NewEngine()
+
+	e.MustParse("t", "Hello {{>p1}}")
+	e.AddPartial("p1", "<strong>{{Name}}</strong>")
+
+	mustRender(t, e, "t", Name{Name: "Bob"}, "Hello <strong>Bob</strong>")
+}
+
 func TestEngineIsolation(t *testing.T) {
 	e1 := NewEngine()
 	e2 := NewEngine()
