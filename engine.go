@@ -11,15 +11,13 @@ var (
 
 type Engine struct {
 	templates map[string]*Template
-	partials  *StaticProvider
+	partials  map[string]string
 }
 
 func NewEngine() *Engine {
 	return &Engine{
 		templates: make(map[string]*Template),
-		partials: &StaticProvider{
-			Partials: make(map[string]string),
-		},
+		partials:  make(map[string]string),
 	}
 }
 
@@ -43,7 +41,7 @@ func (e *Engine) parseTemplate(data string) (*Template, error) {
 		curline:           1,
 		elems:             []interface{}{},
 		forceRaw:          false,
-		partial:           e.partials,
+		partial:           e,
 		escape:            template.HTMLEscapeString,
 		parserFunc:        e.parseTemplate,
 		partialParserFunc: e.parsePartial,
@@ -74,7 +72,7 @@ func (e *Engine) MustParse(name, data string) *Engine {
 }
 
 func (e *Engine) AddPartial(name, t string) error {
-	e.partials.Partials[name] = t
+	e.partials[name] = t
 	return nil
 }
 
@@ -113,4 +111,12 @@ func (e *Engine) MustGetTemplate(name string) *Template {
 		panic(err)
 	}
 	return t
+}
+
+func (e *Engine) GetPartial(name string) (string, error) {
+	p, ok := e.partials[name]
+	if !ok {
+		return "", nil
+	}
+	return p, nil
 }

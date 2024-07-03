@@ -13,7 +13,7 @@ type PartialProvider interface {
 	// Get accepts the name of a partial and returns the parsed partial, if it could be found; a valid but empty
 	// template, if it could not be found; or nil and error if an error occurred (other than an inability to find
 	// the partial).
-	Get(name string) (string, error)
+	GetPartial(name string) (string, error)
 }
 
 // FileProvider implements the PartialProvider interface by providing partials drawn from a filesystem. When a partial
@@ -27,7 +27,7 @@ type FileProvider struct {
 }
 
 // Get accepts the name of a partial and returns the parsed partial.
-func (fp *FileProvider) Get(name string) (string, error) {
+func (fp *FileProvider) GetPartial(name string) (string, error) {
 
 	var paths []string
 	if fp.Paths != nil {
@@ -75,7 +75,7 @@ func NewStaticProvider() *StaticProvider {
 }
 
 // Get accepts the name of a partial and returns the parsed partial.
-func (sp *StaticProvider) Get(name string) (string, error) {
+func (sp *StaticProvider) GetPartial(name string) (string, error) {
 	if sp.Partials != nil {
 		if data, ok := sp.Partials[name]; ok {
 			return data, nil
@@ -88,7 +88,7 @@ func (sp *StaticProvider) Get(name string) (string, error) {
 var _ PartialProvider = (*StaticProvider)(nil)
 
 func getPartials(partials PartialProvider, name, indent string, parserFunc PartialParserFunc) (*Template, error) {
-	data, err := partials.Get(name)
+	data, err := partials.GetPartial(name)
 	if err != nil {
 		return nil, err
 	}
