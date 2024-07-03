@@ -81,7 +81,7 @@ func runTest(t *testing.T, file string, test *specTest) {
 	if ok {
 		// Can disable a single test or the entire file.
 		if _, ok := disabled[test.Name]; ok || len(disabled) == 0 {
-			t.Logf("[%s %s]: Skipped", file, test.Name)
+			t.Logf("Skipped - [%s %s]", file, test.Name)
 			return
 		}
 	}
@@ -92,23 +92,25 @@ func runTest(t *testing.T, file string, test *specTest) {
 		test.Data.(map[string]interface{})["lambda"] = lambdas[test.Name]
 	}
 
-	var out string
-	var err error
-	if len(test.Partials) > 0 {
-		out, err = RenderPartials(test.Template, &StaticProvider{test.Partials}, test.Data)
-	} else {
-		out, err = Render(test.Template, test.Data)
+	e := NewEngine()
+
+	for k, v := range test.Partials {
+		e.AddPartial(k, v)
 	}
+	if err := e.Parse("t", test.Template); err != nil {
+		t.Errorf("Failed  - [%s %s]: failed to parse: %s", file, test.Name, err.Error())
+	}
+	out, err := e.Render("t", test.Data)
 	if err != nil {
-		t.Errorf("[%s %s]: %s", file, test.Name, err.Error())
+		t.Errorf("Failed  - [%s %s]: failed to render: %s", file, test.Name, err.Error())
 		return
 	}
 	if out != test.Expected {
-		t.Errorf("[%s %s]: Expected %q, got %q", file, test.Name, test.Expected, out)
+		t.Errorf("Failed  - [%s %s]: Expected %q, got %q", file, test.Name, test.Expected, out)
 		return
 	}
 
-	t.Logf("[%s %s]: Passed", file, test.Name)
+	t.Logf("Passed  - [%s %s]", file, test.Name)
 }
 
 // Define the lambda functions to match those in the spec tests. The javascript

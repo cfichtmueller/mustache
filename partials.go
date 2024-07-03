@@ -1,7 +1,8 @@
 package mustache
 
 import (
-	"os"
+	"io"
+	"io/fs"
 	"path"
 	"regexp"
 )
@@ -20,13 +21,13 @@ type PartialProvider interface {
 // listed extensions. The default for `Paths` is to search the current working directory. The default for `Extensions`
 // is to examine, in order, no extension; then ".mustache"; then ".stache".
 type FileProvider struct {
+	FS         fs.FS
 	Paths      []string
 	Extensions []string
 }
 
 // Get accepts the name of a partial and returns the parsed partial.
 func (fp *FileProvider) Get(name string) (string, error) {
-	var filename string
 
 	var paths []string
 	if fp.Paths != nil {
@@ -45,25 +46,18 @@ func (fp *FileProvider) Get(name string) (string, error) {
 	for _, p := range paths {
 		for _, e := range exts {
 			name := path.Join(p, name+e)
-			f, err := os.Open(name)
+			f, err := fp.FS.Open(name)
 			if err == nil {
-				filename = name
-				f.Close()
-				break
+				defer f.Close()
+				data, err := io.ReadAll(f)
+				if err != nil {
+					return "", err
+				}
+				return string(data), nil
 			}
 		}
 	}
-
-	if filename == "" {
-		return "", nil
-	}
-
-	data, err := os.ReadFile(filename)
-	if err != nil {
-		return "", err
-	}
-
-	return string(data), nil
+	return "", nil
 }
 
 var _ PartialProvider = (*FileProvider)(nil)
@@ -72,6 +66,12 @@ var _ PartialProvider = (*FileProvider)(nil)
 // name to template contents.
 type StaticProvider struct {
 	Partials map[string]string
+}
+
+func NewStaticProvider() *StaticProvider {
+	return &StaticProvider{
+		Partials: make(map[string]string),
+	}
 }
 
 // Get accepts the name of a partial and returns the parsed partial.
@@ -87,7 +87,7 @@ func (sp *StaticProvider) Get(name string) (string, error) {
 
 var _ PartialProvider = (*StaticProvider)(nil)
 
-func getPartials(partials PartialProvider, name, indent string) (*Template, error) {
+func getPartials(partials PartialProvider, name, indent string, parserFunc PartialParserFunc) (*Template, error) {
 	data, err := partials.Get(name)
 	if err != nil {
 		return nil, err
@@ -97,5 +97,5 @@ func getPartials(partials PartialProvider, name, indent string) (*Template, erro
 	r := regexp.MustCompile(`(?m:^(.+)$)`)
 	data = r.ReplaceAllString(data, indent+"$1")
 
-	return ParseStringPartials(data, partials)
+	return parserFunc(data, partials)
 }

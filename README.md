@@ -9,6 +9,7 @@
 I forked [cbroglie/mustache](https://github.com/cbroglie/mustache) because I wanted to change some things:
 
 - introduce the concept of engines which isolate template and execution contexts
+- remove all implicit file system access
 
 ----
 
@@ -38,46 +39,18 @@ To use it in a program, run `go get github.com/cfichtmueller/mustache` and use `
 
 ## Usage
 
-There are four main methods in this package:
+Usage of this library is pretty simple. It involves the following steps:
 
-```go
-Render(data string, context ...interface{}) (string, error)
+1. create a mustache engine for rendering
+2. add partials (optional)
+3. add templates
+4. start rendering
 
-RenderFile(filename string, context ...interface{}) (string, error)
 
-ParseString(data string) (*Template, error)
-
-ParseFile(filename string) (*Template, error)
-```
-
-There are also two additional methods for using layouts (explained below); as well as several more that can provide a custom Partial retrieval.
-
-The Render method takes a string and a data source, which is generally a map or struct, and returns the output string. If the template file contains an error, the return value is a description of the error. There's a similar method, RenderFile, which takes a filename as an argument and uses that for the template contents.
-
-```go
-data, err := mustache.Render("hello {{c}}", map[string]string{"c": "world"})
-```
-
-If you're planning to render the same template multiple times, you do it efficiently by compiling the template first:
-
-```go
-tmpl, _ := mustache.ParseString("hello {{c}}")
-var buf bytes.Buffer
-for i := 0; i < 10; i++ {
-    tmpl.FRender(&buf, map[string]string{"c": "world"})
-}
-```
-
-For more example usage, please see `mustache_test.go`
-
-### Engine
-
-Use the mustache engine if you want to create isolated, reusable render contexts.
-
-```go
+```go 
 engine := mustache.NewEngine()
 engine.AddPartial("user", "<strong>{{name}}</strong>")
-engine.Parse("base", "{{#names}}{{> user}}{{/names}}")
+err := engine.Parse("base", "{{#names}}{{> user}}{{/names}}")
 
 result, err := engine.Render("base", map[string]interface{}{"names": []map[string]string{{"name": "Alice"}, {"name": "Bob"}}})
 ```
@@ -95,14 +68,14 @@ mustache.go follows the official mustache HTML escaping rules. That is, if you e
 It is a common pattern to include a template file as a "wrapper" for other templates. The wrapper may include a header and a footer, for instance. Mustache.go supports this pattern with the following two methods:
 
 ```go
-RenderInLayout(data string, layout string, context ...interface{}) (string, error)
+engine.MustParse("template", templateString)
+engine.MustParse("layout", layoutString)
 
-RenderFileInLayout(filename string, layoutFile string, context ...interface{}) (string, error)
+res, err := engine.RenderInLayout("template", "layout", context)
+
 ```
 
-The layout file must have a variable called `{{content}}`. For example, given the following files:
-
-layout.html.mustache:
+The layout template must have a variable called `{{content}}`. For example, given the following layout:
 
 ```html
 <html>
@@ -113,13 +86,13 @@ layout.html.mustache:
 </html>
 ```
 
-template.html.mustache:
+and the following template:
 
 ```html
 <h1>Hello World!</h1>
 ```
 
-A call to `RenderFileInLayout("template.html.mustache", "layout.html.mustache", nil)` will produce:
+A call to `engine.RenderInLayout("template", "layout", nil)` will produce:
 
 ```html
 <html>
@@ -128,49 +101,6 @@ A call to `RenderFileInLayout("template.html.mustache", "layout.html.mustache", 
 <h1>Hello World!</h1>
 </body>
 </html>
-```
-
-----
-
-## Custom PartialProvider
-
-Mustache.go has been extended to support a user-defined repository for mustache partials, instead of the default of requiring file-based templates.
-
-Several new top-level functions have been introduced to take advantage of this:
-
-```go
-
-func RenderPartials(data string, partials PartialProvider, context ...interface{}) (string, error)
-
-func RenderInLayoutPartials(data string, layoutData string, partials PartialProvider, context ...interface{}) (string, error)
-
-func ParseStringPartials(data string, partials PartialProvider) (*Template, error)
-
-func ParseFilePartials(filename string, partials PartialProvider) (*Template, error)
-
-```
-
-A `PartialProvider` is any object that responds to `Get(string)
-(*Template,error)`, and two examples are provided- a `FileProvider` that
-recreates the old behavior (and is indeed used internally for backwards
-compatibility); and a `StaticProvider` alias for a `map[string]string`. Using
-either of these is simple:
-
-```go
-
-fp := &FileProvider{
-  Paths: []string{ "", "/opt/mustache", "templates/" },
-  Extensions: []string{ "", ".stache", ".mustache" },
-}
-
-tmpl, err := ParseStringPartials("This partial is loaded from a file: {{>foo}}", fp)
-
-sp := StaticProvider(map[string]string{
-  "foo": "{{>bar}}",
-  "bar": "some data",
-})
-
-tmpl, err := ParseStringPartials("This partial is loaded from a map: {{>foo}}", sp)
 ```
 
 ----
@@ -199,7 +129,9 @@ While they appear to be identical methods, `Name1` has a pointer receiver, and `
 So if you write the following:
 
 ```go
-mustache.Render("{{Name1}}", Person{"John", "Smith"})
+engine := mustache.NewEngine().MustParse("t", "{{Name1}}")
+
+engine.Render("t", Person{"John", "Smith"})
 ```
 
 It'll be blank. You either have to use `&Person{"John", "Smith"}`, or call `Name2`
