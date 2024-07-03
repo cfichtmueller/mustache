@@ -70,6 +70,18 @@ for i := 0; i < 10; i++ {
 
 For more example usage, please see `mustache_test.go`
 
+### Engine
+
+Use the mustache engine if you want to create isolated, reusable render contexts.
+
+```go
+engine := mustache.NewEngine()
+engine.AddPartial("user", "<strong>{{name}}</strong>")
+engine.Parse("base", "{{#names}}{{> user}}{{/names}}")
+
+result, err := engine.Render("base", map[string]interface{}{"names": []map[string]string{{"name": "Alice"}, {"name": "Bob"}}})
+```
+
 ----
 
 ## Escaping
