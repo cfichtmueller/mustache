@@ -1,6 +1,7 @@
 package mustache
 
 import (
+	"embed"
 	"testing"
 )
 
@@ -69,6 +70,43 @@ func TestEngineIsolation(t *testing.T) {
 
 	mustRender(t, e1, "t", n, "Hello from <strong>Alice</strong>")
 	mustRender(t, e2, "t", n, "Guten Tag von <i>Alice</i>")
+}
+
+var (
+	//go:embed tests
+	testFS embed.FS
+)
+
+func TestEngineParseFS(t *testing.T) {
+	e := NewEngine()
+	if err := e.ParseFS(testFS, "tests/templates/*.mustache"); err != nil {
+		t.Error(err)
+	}
+	for _, name := range []string{"t1", "t2", "t3"} {
+		tmpl, err := e.GetTemplate(name)
+		if err != nil {
+			t.Errorf("expected to find template %s: %v", name, err)
+		}
+		if tmpl == nil {
+			t.Errorf("expected to find template %s but got nil", name)
+		}
+	}
+}
+
+func TestEngineAddPartialFS(t *testing.T) {
+	e := NewEngine()
+	if err := e.AddPartialFS(testFS, "tests/partials/*.mustache"); err != nil {
+		t.Error(err)
+	}
+	for _, name := range []string{"p1", "p2"} {
+		p, err := e.GetPartial(name)
+		if err != nil {
+			t.Errorf("expected to find partial %s: %v", name, err)
+		}
+		if p == "" {
+			t.Errorf("expected to find partial %s but got empty", name)
+		}
+	}
 }
 
 func mustParse(t *testing.T, e *Engine, name, tmpl string) {

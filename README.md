@@ -55,6 +55,19 @@ err := engine.Parse("base", "{{#names}}{{> user}}{{/names}}")
 result, err := engine.Render("base", map[string]interface{}{"names": []map[string]string{{"name": "Alice"}, {"name": "Bob"}}})
 ```
 
+You can also load templates and partials from a file system. E.g. you want to bundle up all your html templates within your app.
+
+```go
+var (
+    //go:embed templates
+    templateFS embed.FS
+    engine = mustache.
+        NewEngine().
+        MustParseFS(templateFS, "templates/templates/*.mustache").
+        MustAddPartialFS(templateFS, "templates/partials/*.mustache")
+)
+```
+
 ----
 
 ## Escaping
