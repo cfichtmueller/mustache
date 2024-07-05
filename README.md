@@ -1,41 +1,10 @@
-# Mustache Template Engine for Go
+# mustache templates in Go
 
 ![Go Test](https://github.com/cfichtmueller/mustache/actions/workflows/testing.yml/badge.svg)
 
-----
-
-## Why a Fork?
-
-I forked [cbroglie/mustache](https://github.com/cbroglie/mustache) because I wanted to change some things:
-
-- introduce the concept of engines which isolate template and execution contexts
-- remove all implicit file system access
-
-----
-
-## Package Overview
-
-This library is an implementation of the Mustache template language in Go.
-
-### Mustache Spec Compliance
-
-[mustache/spec](https://github.com/mustache/spec) contains the formal standard for Mustache, and it is included as a submodule (using v1.2.1) for testing compliance. All of the tests pass (big thanks to [kei10in](https://github.com/kei10in)), with the exception of the null interpolation tests added in v1.2.1. There is experimental support for a subset of the optional lambda functionality (thanks to [fromhut](https://github.com/fromhut)). The optional inheritance functionality has not been implemented.
-
-----
-
-## Documentation
-
-For more information about mustache, check out the [mustache project page](https://github.com/mustache/mustache) or the [mustache manual](https://mustache.github.io/mustache.5.html).
-
-Also check out some [example mustache files](http://github.com/mustache/mustache/tree/master/examples/).
-
-----
-
 ## Installation
 
-To use it in a program, run `go get github.com/cfichtmueller/mustache` and use `import "github.com/cfichtmueller/mustache"`.
-
-----
+To install mustache, run `go get github.com/cfichtmueller/mustache` and use `import "github.com/cfichtmueller/mustache"`.
 
 ## Usage
 
@@ -47,15 +16,53 @@ Usage of this library is pretty simple. It involves the following steps:
 4. start rendering
 
 
+Simplest Use Case
+
 ```go 
 engine := mustache.NewEngine()
-engine.AddPartial("user", "<strong>{{name}}</strong>")
-err := engine.Parse("base", "{{#names}}{{> user}}{{/names}}")
 
-result, err := engine.Render("base", map[string]interface{}{"names": []map[string]string{{"name": "Alice"}, {"name": "Bob"}}})
+err := engine.Parse("greeting", "Hello {{name}}")
+
+result, err := engine.Render("greeting", map[string]string{"name": "Bob"})
+```
+
+With Partials
+
+```go 
+engine := mustache.NewEngine()
+
+engine.AddPartial("user", "<strong>{{name}}</strong>")
+
+err := engine.Parse("greeting", "Hello {{> user}}")
+
+result, err := engine.Render("greeting", map[string]string{"name": "Bob"})
+```
+
+Using Layouts
+
+```go 
+engine := mustache.NewEngine()
+
+err := engine.Parse("layout", "<div>{{content}}</div>")
+
+err = engine.Parse("greeting", "Hello {{name}}")
+
+result, err := engine.RenderInLayout("greeting", "layout", map[string]string{"name": "Bob"})
 ```
 
 You can also load templates and partials from a file system. E.g. you want to bundle up all your html templates within your app.
+
+
+```ascii
+├─templates/
+│ ├─templates/
+│ │ ├─index.mustache
+│ │ └─profile.mustache
+│ └─partials/
+│   ├─user.mustache
+│   └─project.mustache
+└─main.go
+```
 
 ```go
 var (
@@ -68,13 +75,10 @@ var (
 )
 ```
 
-----
 
 ## Escaping
 
 mustache.go follows the official mustache HTML escaping rules. That is, if you enclose a variable with two curly brackets, `{{var}}`, the contents are HTML-escaped. For instance, strings like `5 > 2` are converted to `5 &gt; 2`. To use raw characters, use three curly brackets `{{{var}}}`.
-
-----
 
 ## Layouts
 
@@ -116,8 +120,6 @@ A call to `engine.RenderInLayout("template", "layout", nil)` will produce:
 </html>
 ```
 
-----
-
 ## A note about method receivers
 
 Mustache.go supports calling methods on objects, but you have to be aware of Go's limitations. For example, lets's say you have the following type:
@@ -156,3 +158,13 @@ It'll be blank. You either have to use `&Person{"John", "Smith"}`, or call `Name
 - Change delimiter
 - Sections (boolean, enumerable, and inverted)
 - Partials
+
+## Further Reading
+
+- mustache project page
+- mustache manual
+- example mustache files
+
+## Credits
+
+Kudeos to [hoisie](https://github.com/hoisie), [cbroglie](https://github.com/cbroglie) and all other contributors for their original work on this project.
