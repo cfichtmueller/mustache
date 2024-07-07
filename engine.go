@@ -12,14 +12,19 @@ var (
 )
 
 type Engine struct {
-	templates map[string]*Template
-	partials  map[string]string
+	// AllowMissingVariables defines the behavior for a variable "miss." If it
+	// is true (the default), an empty string is emitted. If it is false, an error
+	// is generated instead.
+	AllowMissingVariables bool
+	templates             map[string]*Template
+	partials              map[string]string
 }
 
 func NewEngine() *Engine {
 	return &Engine{
-		templates: make(map[string]*Template),
-		partials:  make(map[string]string),
+		AllowMissingVariables: true,
+		templates:             make(map[string]*Template),
+		partials:              make(map[string]string),
 	}
 }
 
@@ -104,17 +109,18 @@ func parseTemplate(e *Engine, name, content string) error {
 
 func (e *Engine) parseTemplate(data string) (*Template, error) {
 	tmpl := &Template{
-		data:              data,
-		otag:              "{{",
-		ctag:              "}}",
-		p:                 0,
-		curline:           1,
-		elems:             []interface{}{},
-		forceRaw:          false,
-		partial:           e,
-		escape:            template.HTMLEscapeString,
-		parserFunc:        e.parseTemplate,
-		partialParserFunc: e.parsePartial,
+		allowMissingVariables: e.AllowMissingVariables,
+		data:                  data,
+		otag:                  "{{",
+		ctag:                  "}}",
+		p:                     0,
+		curline:               1,
+		elems:                 []interface{}{},
+		forceRaw:              false,
+		partial:               e,
+		escape:                template.HTMLEscapeString,
+		parserFunc:            e.parseTemplate,
+		partialParserFunc:     e.parsePartial,
 	}
 	err := tmpl.parse()
 

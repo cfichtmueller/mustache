@@ -9,13 +9,6 @@ import (
 	"strings"
 )
 
-var (
-	// AllowMissingVariables defines the behavior for a variable "miss." If it
-	// is true (the default), an empty string is emitted. If it is false, an error
-	// is generated instead.
-	AllowMissingVariables = true
-)
-
 // RenderFunc is provided to lambda functions for rendering.
 type RenderFunc func(text string) (string, error)
 
@@ -102,17 +95,18 @@ type PartialParserFunc func(data string, partials PartialProvider) (*Template, e
 
 // Template represents a compilde mustache template
 type Template struct {
-	data              string
-	otag              string
-	ctag              string
-	p                 int
-	curline           int
-	elems             []interface{}
-	forceRaw          bool
-	partial           PartialProvider
-	escape            EscapeFunc
-	parserFunc        ParserFunc
-	partialParserFunc PartialParserFunc
+	allowMissingVariables bool
+	data                  string
+	otag                  string
+	ctag                  string
+	p                     int
+	curline               int
+	elems                 []interface{}
+	forceRaw              bool
+	partial               PartialProvider
+	escape                EscapeFunc
+	parserFunc            ParserFunc
+	partialParserFunc     PartialParserFunc
 }
 
 // Tags returns the mustache tags for the given template
@@ -692,7 +686,7 @@ func (tmpl *Template) renderElement(element interface{}, contextChain []interfac
 				fmt.Printf("Panic while looking up %q: %s\n", elem.name, r)
 			}
 		}()
-		val, err := lookup(contextChain, elem.name, AllowMissingVariables)
+		val, err := lookup(contextChain, elem.name, tmpl.allowMissingVariables)
 		if err != nil {
 			return err
 		}

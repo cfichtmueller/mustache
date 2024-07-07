@@ -219,10 +219,10 @@ func TestBasic(t *testing.T) {
 	}
 
 	// Now set AllowMissingVariables=false and test again
-	AllowMissingVariables = false
-	defer func() { AllowMissingVariables = true }()
 	for _, test := range tests {
-		output, err := NewEngine().MustParse("t", test.tmpl).Render("t", test.context)
+		e := NewEngine()
+		e.AllowMissingVariables = false
+		output, err := e.MustParse("t", test.tmpl).Render("t", test.context)
 		if err != nil {
 			t.Errorf("%s expected %s but got error %s", test.tmpl, test.expected, err.Error())
 		} else if output != test.expected {
@@ -258,10 +258,9 @@ func TestMissing(t *testing.T) {
 	}
 
 	// Now set AllowMissingVariables=false and confirm we get errors.
-	AllowMissingVariables = false
-	defer func() { AllowMissingVariables = true }()
 	for _, test := range missing {
 		e := NewEngine()
+		e.AllowMissingVariables = false
 		if err := e.Parse("t", test.tmpl); err != nil {
 			t.Errorf("%q failed to parse: %v", test.tmpl, err)
 		}
