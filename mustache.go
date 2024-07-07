@@ -95,18 +95,19 @@ type PartialParserFunc func(data string, partials PartialProvider) (*Template, e
 
 // Template represents a compilde mustache template
 type Template struct {
-	allowMissingVariables bool
-	data                  string
-	otag                  string
-	ctag                  string
-	p                     int
-	curline               int
-	elems                 []interface{}
-	forceRaw              bool
-	partial               PartialProvider
-	escape                EscapeFunc
-	parserFunc            ParserFunc
-	partialParserFunc     PartialParserFunc
+	allowMissingVariables        bool
+	decapitalizeStructFieldNames bool
+	data                         string
+	otag                         string
+	ctag                         string
+	p                            int
+	curline                      int
+	elems                        []interface{}
+	forceRaw                     bool
+	partial                      PartialProvider
+	escape                       EscapeFunc
+	parserFunc                   ParserFunc
+	partialParserFunc            PartialParserFunc
 }
 
 // Tags returns the mustache tags for the given template
@@ -467,16 +468,16 @@ func (tmpl *Template) parse() error {
 
 // Evaluate interfaces and pointers looking for a value that can look up the name, via a
 // struct field, method, or map key, and return the result of the lookup.
-func lookup(contextChain []interface{}, name string, allowMissing bool) (reflect.Value, error) {
+func lookup(contextChain []interface{}, name string, allowMissing, decapitalizeStructFieldNames bool) (reflect.Value, error) {
 	// dot notation
 	if name != "." && strings.Contains(name, ".") {
 		parts := strings.SplitN(name, ".", 2)
 
-		v, err := lookup(contextChain, parts[0], allowMissing)
+		v, err := lookup(contextChain, parts[0], allowMissing, decapitalizeStructFieldNames)
 		if err != nil {
 			return v, err
 		}
-		return lookup([]interface{}{v}, parts[1], allowMissing)
+		return lookup([]interface{}{v}, parts[1], allowMissing, decapitalizeStructFieldNames)
 	}
 
 	defer func() {
@@ -494,7 +495,7 @@ Outer:
 				for i := 0; i < n; i++ {
 					m := typ.Method(i)
 					mtyp := m.Type
-					if m.Name == name && mtyp.NumIn() == 1 {
+					if (m.Name == name || (decapitalizeStructFieldNames && m.Name == strings.ToUpper(name[:1])+name[1:])) && mtyp.NumIn() == 1 {
 						return v.Method(i).Call(nil)[0], nil
 					}
 				}
@@ -511,6 +512,12 @@ Outer:
 				ret := av.FieldByName(name)
 				if ret.IsValid() {
 					return ret, nil
+				}
+				if decapitalizeStructFieldNames {
+					ret := av.FieldByName(strings.ToUpper(name[:1]) + name[1:])
+					if ret.IsValid() {
+						return ret, nil
+					}
 				}
 				continue Outer
 			case reflect.Map:
@@ -565,7 +572,7 @@ loop:
 }
 
 func (tmpl *Template) renderSection(section *sectionElement, contextChain []interface{}, buf io.Writer) error {
-	value, err := lookup(contextChain, section.name, true)
+	value, err := lookup(contextChain, section.name, true, tmpl.decapitalizeStructFieldNames)
 	if err != nil {
 		return err
 	}
@@ -686,7 +693,7 @@ func (tmpl *Template) renderElement(element interface{}, contextChain []interfac
 				fmt.Printf("Panic while looking up %q: %s\n", elem.name, r)
 			}
 		}()
-		val, err := lookup(contextChain, elem.name, tmpl.allowMissingVariables)
+		val, err := lookup(contextChain, elem.name, tmpl.allowMissingVariables, tmpl.decapitalizeStructFieldNames)
 		if err != nil {
 			return err
 		}

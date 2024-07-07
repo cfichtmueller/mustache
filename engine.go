@@ -16,15 +16,20 @@ type Engine struct {
 	// is true (the default), an empty string is emitted. If it is false, an error
 	// is generated instead.
 	AllowMissingVariables bool
-	templates             map[string]*Template
-	partials              map[string]string
+	// DecapitalizeStructFieldNames defines the behavior for accessing struct members.
+	// If it is true (the default), public members can be accessed by their lowercase
+	// name equivalent.
+	DecapitalizeStructFieldNames bool
+	templates                    map[string]*Template
+	partials                     map[string]string
 }
 
 func NewEngine() *Engine {
 	return &Engine{
-		AllowMissingVariables: true,
-		templates:             make(map[string]*Template),
-		partials:              make(map[string]string),
+		AllowMissingVariables:        true,
+		DecapitalizeStructFieldNames: true,
+		templates:                    make(map[string]*Template),
+		partials:                     make(map[string]string),
 	}
 }
 
@@ -109,18 +114,19 @@ func parseTemplate(e *Engine, name, content string) error {
 
 func (e *Engine) parseTemplate(data string) (*Template, error) {
 	tmpl := &Template{
-		allowMissingVariables: e.AllowMissingVariables,
-		data:                  data,
-		otag:                  "{{",
-		ctag:                  "}}",
-		p:                     0,
-		curline:               1,
-		elems:                 []interface{}{},
-		forceRaw:              false,
-		partial:               e,
-		escape:                template.HTMLEscapeString,
-		parserFunc:            e.parseTemplate,
-		partialParserFunc:     e.parsePartial,
+		allowMissingVariables:        e.AllowMissingVariables,
+		decapitalizeStructFieldNames: e.DecapitalizeStructFieldNames,
+		data:                         data,
+		otag:                         "{{",
+		ctag:                         "}}",
+		p:                            0,
+		curline:                      1,
+		elems:                        []interface{}{},
+		forceRaw:                     false,
+		partial:                      e,
+		escape:                       template.HTMLEscapeString,
+		parserFunc:                   e.parseTemplate,
+		partialParserFunc:            e.parsePartial,
 	}
 	err := tmpl.parse()
 

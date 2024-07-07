@@ -26,6 +26,10 @@ type User struct {
 	ID   int64
 }
 
+func (u *User) Initial() string {
+	return u.Name[:1]
+}
+
 type Settings struct {
 	Allow bool
 }

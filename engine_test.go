@@ -109,6 +109,21 @@ func TestEngineAddPartialFS(t *testing.T) {
 	}
 }
 
+func TestDecapitalizeStructNames(t *testing.T) {
+	user := &User{Name: "Bob"}
+	e := NewEngine().MustParse("field", "Hello {{name}}!").MustParse("method", "Hello {{initial}}!")
+
+	mustRender(t, e, "field", user, "Hello Bob!")
+	mustRender(t, e, "method", user, "Hello B!")
+
+	e = NewEngine()
+	e.DecapitalizeStructFieldNames = false
+	e.MustParse("field", "Hello {{name}}!").MustParse("method", "Hello {{initial}}!")
+
+	mustRender(t, e, "field", user, "Hello !")
+	mustRender(t, e, "method", user, "Hello !")
+}
+
 func mustParse(t *testing.T, e *Engine, name, tmpl string) {
 	if err := e.Parse(name, tmpl); err != nil {
 		t.Errorf("failed to parse template: %v", err)

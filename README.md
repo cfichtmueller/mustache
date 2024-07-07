@@ -75,6 +75,37 @@ var (
 )
 ```
 
+## Decapitalize Struct Field Names
+
+Go is unique in the sense as it uses casing for determining visibility.To shield template authors from the intricacies of Go, the engine automatically decapitalizes field and method names of structs when rendering a template.
+
+This feature can be disabled.
+
+```go
+
+type User struct {
+    Name string
+}
+
+func (u *User) Initial() string {
+    return u.Name[:1]
+}
+
+e := NewEngine()
+e.DecapitalizeStructFieldNames = true // default behavior
+e.MustCompile("field", "Hello {{name}}!")
+e.MustCompile("method", "Hello {{initial}}!")
+
+val, err := e.Render("field", &User{Name: "Bob"}) // Hello Bob!
+val, err := e.Render("method", &User{Name: "Alice"}) // Hello A!
+
+e.DecapitalizeStructFieldNames = false // disable decapitalization
+e.MustCompile("field", "Hello {{name}}!")
+e.MustCompile("method", "Hello {{initial}}!")
+
+val, err := e.Render("field", &User{Name: "Bob"}) // Hello !
+val, err := e.Render("method", &User{Name: "Alice"}) // Hello !
+```
 
 ## Escaping
 
